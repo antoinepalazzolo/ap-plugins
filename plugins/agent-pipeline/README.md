@@ -29,8 +29,10 @@ The orchestrator never writes code. It triages each item just in time, spawns su
 Give the orchestrator a task list, either inline or in a file:
 
 ```
-Use the orchestrator agent on tasks.md
+Use the agent-pipeline:orchestrator agent on tasks.md
 ```
+
+Installed as a plugin, the agents are namespaced under the plugin name, so they are `agent-pipeline:orchestrator`, `agent-pipeline:planner`, `agent-pipeline:implementer`, `agent-pipeline:code-reviewer` and `agent-pipeline:fixer`. The orchestrator spawns the others by their namespaced name and falls back to the short name if you installed them as plain project agents (copied into `.claude/agents/`) instead.
 
 The task file is the persistent state of the run:
 
