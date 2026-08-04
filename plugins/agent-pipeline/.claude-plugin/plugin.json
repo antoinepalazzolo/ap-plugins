@@ -1,6 +1,6 @@
 {
   "name": "agent-pipeline",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Autonomous task pipeline: an orchestrator runs each task through planner, implementer, code-reviewer and fixer subagents until tests are green.",
   "author": {
     "name": "Antoine Palazzolo",
