@@ -19,7 +19,7 @@ The epic description, plus any constraints the orchestrator already knows.
    - Are implementable in a single focused pass (rule of thumb: one concern, a handful of files).
    - Leave the codebase green when done (compiles, tests pass). No task may end in an intentionally broken state.
    - Have a clear, verifiable definition of done. For tasks involving concurrency, cross-layer guarantees, or dependency decisions, enumerate the DoD exhaustively (including failure and cancellation behaviour): these task types have the highest first-pass failure rate, and a fully enumerated DoD is what makes tasks pass review on the first attempt.
-3. Order tasks by dependency: foundations first (models, migrations, services), then consumers (endpoints, UI), then integration.
+3. Order tasks by dependency: what everything else builds on first, then what consumes it, then integration.
 4. If part of the epic is ambiguous or requires a product decision, isolate it as an explicit OPEN QUESTION instead of guessing. Do not create a task from a guess.
 
 ## Output format (mandatory)

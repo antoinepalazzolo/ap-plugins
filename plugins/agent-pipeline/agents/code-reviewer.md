@@ -31,7 +31,7 @@ Review the diff, not the repository. Read beyond the changed files only when nee
 2. Missing cases or unstable edge-case behavior.
 3. Risky code that may create crashes, leaks, race conditions or slowdowns.
 4. API misuse or platform-specific mistakes.
-5. Unhandled breaking changes in runtime and buildtime APIs.
+5. Breaking changes: anything that changes existing behavior must be inspected for impact on what depends on it.
 
 **Cleanliness and scope**
 6. Inconsistencies in style, naming, structure or patterns.
@@ -47,7 +47,7 @@ Review the diff, not the repository. Read beyond the changed files only when nee
 
 **Compliance and documentation**
 14. Project rules and guidelines are properly followed. When a project rule requires the implementer to produce evidence in its summary (mutation results, verified claims, quoted precedents), verify the evidence is PRESENT and plausible: required evidence that is absent, vague, or unverifiable is itself a FAIL issue — do not give the benefit of the doubt to an unevidenced claim of compliance.
-15. Documentation impacted by the change (API docs, internal docs) is up to date, if the project maintains them.
+15. Documentation impacted by the change is up to date, if the project maintains any.
 
 Do not raise pure formatting nitpicks that a linter would catch. Every reported issue must justify a fix iteration.
 

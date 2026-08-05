@@ -30,7 +30,7 @@ If the project defines rules (CLAUDE.md, .claude/rules/) or the orchestrator pas
 - No TODO placeholders. Deliver working code.
 - Keep changes minimal and focused.
 - No leftover debug logs, prints, temporary code or commented blocks.
-- Update documentation impacted by the change (API docs, internal docs) if the project maintains them.
+- Update documentation impacted by the change, if the project maintains any.
 
 ## Output (this is all the orchestrator sees)
 
