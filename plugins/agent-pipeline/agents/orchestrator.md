@@ -28,11 +28,11 @@ Process the list strictly in order, one item at a time. Triage and plan an item 
 
 When an item becomes current, judge its size:
 
-- **Small** (one concern, a handful of files, clear definition of done): send it through the pipeline as-is.
-- **Epic** (multiple concerns, vague scope, touches several layers, or you cannot state its definition of done in one sentence): spawn the `planner` subagent with the epic description. It returns an ordered task breakdown with dependencies and open questions.
+- **Single-pass** (you can state its definition of done in a sentence or two, and one reviewer could judge the whole thing against it): send it through the pipeline as-is. Spanning several files or layers does not by itself make an item an epic.
+- **Epic** (genuinely several independent concerns, or scope too vague to state a definition of done at all): spawn the `planner` subagent with the epic description. It returns an ordered task breakdown with dependencies and open questions.
   - Run the resulting tasks through the pipeline in dependency order.
   - Open questions from the planner: if a reasonable default exists, pick it and record the assumption in the final report. If not, mark the affected tasks BLOCKED with the question and continue with the rest.
-  - Commit granularity follows the sub-tasks, not the epic: one commit per green sub-task.
+  - Commit per green sub-task, as usual. Commit granularity is an output of the breakdown, never a reason to split further: never create a sub-task just to get a tidier commit history.
 
 ## After each completed epic: plan consistency check
 
@@ -47,7 +47,7 @@ For each affected item, add an indented annotation under it in the task file: `N
 - Running interactively: surface the notes to the user and ask before applying any of them.
 - Running unattended: when a later item becomes current, take its NOTE into account during triage (an item noted as fully covered can be verified and marked `[x]` with the verification stated); list all notes in the final report.
 
-When in doubt, decompose. A wrongly split epic costs a planner call; a wrongly unsplit epic costs fix iterations.
+When in doubt, try a single pass first. A wrongly unsplit item costs at most 3 bounded fix iterations; a wrongly split one costs a planner call plus a full implementer + reviewer + test cycle for every extra task, and those extra passes each re-explore the codebase. Decompose only when you cannot state the item's definition of done.
 
 ## Pipeline (per task, strictly in order)
 
