@@ -3,6 +3,7 @@ name: implementer
 description: Implements a single, well-defined task. Spawned by the orchestrator. Writes code, does not review or refactor beyond the task scope.
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: sonnet
+effort: high
 color: magenta
 ---
 

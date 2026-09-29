@@ -2,7 +2,7 @@
 name: fixer
 description: Fixes a failed implementation. Spawned by the orchestrator with the reviewer's issue list and/or failing test output. Addresses only the reported issues.
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: sonnet
+model: opus
 color: yellow
 ---
 
