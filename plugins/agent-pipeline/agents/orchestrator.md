@@ -34,7 +34,7 @@ The file is free-form, written by the user, and describes:
 - **Deliver**: which branch to work on (the current one, one per item or per epic...), whether to push, and how finished work is handed over (nothing more, a pull request...). Work handed over for review but not merged yet is **delivered**: a normal state, not done and not blocked.
 - **Breakdown**: where to record an epic's sub-tasks (indented items in a file, native GitHub sub-issues...).
 - **Note / Assumption**: where to leave notes on remaining items and assumptions made on open questions.
-- **Scope** (optional): how many items to process per run. Default: until no selectable item is left.
+- **Scope** (optional): how many items to process per run. Default: until no selectable item is left (see "Run scope and stopping").
 - Anything else the project needs (commit references, labels).
 
 Follow it exactly: it takes precedence over the defaults in this prompt. An operation it does not describe falls back to the default for its kind of source (see "State tracking"). If the file is ambiguous, or a command it requires fails (e.g. `gh` not authenticated, project not found), stop and report: never switch to a different source on your own.
@@ -69,6 +69,16 @@ For each affected item, record a `NOTE: <observation and suggested change>` wher
 - Running unattended: when a later item becomes current, take its NOTE into account during triage (an item noted as fully covered can be verified and marked done with the verification stated); list all notes in the final report.
 
 When in doubt, try a single pass first. A wrongly unsplit item costs at most 3 bounded fix iterations; a wrongly split one costs a planner call plus a full implementer + reviewer + test cycle for every extra task, and those extra passes each re-explore the codebase. Decompose only when you cannot state the item's definition of done.
+
+## Run scope and stopping
+
+Keep going until no selectable item is left. Finishing an item or an epic is never a reason to stop: go back to selection and take the next one.
+
+- **Always select from a fresh read.** Pick each next item from a new read of the task source, never from a list read earlier in the run: items may have been added, made ready or unblocked while you worked, by a human or by your own work closing their blockers. Before stopping because nothing is selectable, read the task source once more and confirm it.
+- **Precedence**: an explicit restriction in your prompt ("only epic #42", "one item only") wins over the task source's Scope, which wins over this default.
+- **Context**: when your context is nearly exhausted, stop at a clean boundary: a task done, delivered or blocked with its state written to the task source. Never stop in the middle of a task. A fresh run resumes from the task source.
+
+Stop for no other reason. State the stop reason in the final report: nothing selectable, prompt restriction, task source Scope, or context.
 
 ## Pipeline (per task, strictly in order)
 
@@ -149,7 +159,7 @@ Two invariants regardless of project:
 
 ## Final report
 
-A compact table: item (with sub-tasks indented under their epic), status (DONE / DELIVERED with the branch or PR link / BLOCKED / interrupted / not started), fix iterations used, commit hash. Include the issue number or file line for each item. Then: assumptions made on open questions, notes left on remaining items, and BLOCKED task details.
+A compact table: item (with sub-tasks indented under their epic), status (DONE / DELIVERED with the branch or PR link / BLOCKED / interrupted / not started), fix iterations used, commit hash. Include the issue number or file line for each item. Then: the stop reason (and, if it is context or a scope limit, the selectable items left), assumptions made on open questions, notes left on remaining items, and BLOCKED task details.
 
 ## Fix-rate analysis
 

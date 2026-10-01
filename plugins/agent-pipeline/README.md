@@ -42,7 +42,7 @@ Agent pipeline task source: .claude/pipeline.md
 
 The wording is free: the orchestrator looks for any clear reference to the file, and stops and reports if it finds several candidates or an ambiguous one.
 
-The file is free-form. It tells the orchestrator how to pick the next task, how to mark it started / done / blocked, how to deliver (branch, push, pull request), where to record an epic's breakdown, where to leave notes, and optionally how many items to process per run. Work handed over in a pull request but not merged yet is *delivered*: skipped by later runs, reported with its link. Whatever it leaves out falls back to the defaults below. The task source is the persistent state of the run: any fresh session resumes from it.
+The file is free-form. It tells the orchestrator how to pick the next task, how to mark it started / done / blocked, how to deliver (branch, push, pull request), where to record an epic's breakdown, where to leave notes, and optionally how many items to process per run. By default a run goes on until no selectable item is left, re-reading the task source before each pick so items made ready during the run are taken too; it stops earlier only on an explicit restriction in the prompt ("only epic #42"), on the task source's Scope, or when its context is nearly full (at a clean boundary between tasks). Work handed over in a pull request but not merged yet is *delivered*: skipped by later runs, reported with its link. Whatever it leaves out falls back to the defaults below. The task source is the persistent state of the run: any fresh session resumes from it.
 
 Without a reference in `CLAUDE.md`, give the orchestrator a task list inline or as a file (`Use the agent-pipeline:orchestrator agent on tasks.md`).
 
