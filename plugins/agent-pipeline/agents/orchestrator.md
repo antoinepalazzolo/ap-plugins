@@ -72,13 +72,26 @@ When in doubt, try a single pass first. A wrongly unsplit item costs at most 3 b
 
 ## Run scope and stopping
 
-Keep going until no selectable item is left. Finishing an item or an epic is never a reason to stop: go back to selection and take the next one.
+An item is a top-level unit of work: an epic together with all its sub-tasks, or a standalone ticket (a bug, task or chore that is not a sub-task of another item). Standalone tickets are selected like epics: whenever the task source makes one pickable it is a candidate, even if the task source's priority rules only mention epics (then take it in the order the source lists items, e.g. Project order). Triage decides whether it is single-pass or goes through the planner, exactly as for an epic.
+
+A run works in one of two modes, chosen by your prompt:
+
+- **Continuous** (default): keep going until no selectable item is left. Finishing an item is never a reason to stop: go back to selection and take the next one.
+- **Single item** (the prompt asks for one item, as the `run-pipeline` runner does): carry exactly one item to its end, then stop. Its end is reached when it is done, delivered or blocked: for an epic, every sub-task done or blocked and the epic itself handed over. If an item is already started (see "State tracking"), resuming it is this run's item. Never select a second one: the runner starts a fresh session for it.
+
+In both modes:
 
 - **Always select from a fresh read.** Pick each next item from a new read of the task source, never from a list read earlier in the run: items may have been added, made ready or unblocked while you worked, by a human or by your own work closing their blockers. Before stopping because nothing is selectable, read the task source once more and confirm it.
-- **Precedence**: an explicit restriction in your prompt ("only epic #42", "one item only") wins over the task source's Scope, which wins over this default.
-- **Context**: when your context is nearly exhausted, stop at a clean boundary: a task done, delivered or blocked with its state written to the task source. Never stop in the middle of a task. A fresh run resumes from the task source.
+- **Precedence**: an explicit restriction in your prompt ("only epic #42", "one item") wins over the task source's Scope, which wins over the mode's default.
+- **Fatal error**: the cases where "Task source" says to stop and report (task source missing or ambiguous, a required command failing).
 
-Stop for no other reason. State the stop reason in the final report: nothing selectable, prompt restriction, task source Scope, or context.
+Stop for no other reason. The final report ends with one line, alone and exactly in this form, giving the stop reason:
+
+```
+PIPELINE_STOP: <reason>
+```
+
+where `<reason>` is `nothing-selectable`, `item-done` (the single item, a prompt restriction or the task source's Scope is reached; selectable items may remain), or `error`.
 
 ## Pipeline (per task, strictly in order)
 
@@ -159,18 +172,4 @@ Two invariants regardless of project:
 
 ## Final report
 
-A compact table: item (with sub-tasks indented under their epic), status (DONE / DELIVERED with the branch or PR link / BLOCKED / interrupted / not started), fix iterations used, commit hash. Include the issue number or file line for each item. Then: the stop reason (and, if it is context or a scope limit, the selectable items left), assumptions made on open questions, notes left on remaining items, and BLOCKED task details.
-
-## Fix-rate analysis
-
-After the table, compute the first-pass failure rate: tasks that needed at least one fix iteration, divided by completed tasks.
-
-If MORE THAN 50% of completed tasks needed fixes, analyze why before finishing:
-
-1. Re-read the FIRST reviewer verdict of each fixed task (from your own conversation history: you received them all).
-2. Classify each first-round issue into: missing/weak tests, missing docs, edge cases, project convention violations, scope creep, genuine logic bugs, other.
-3. Report the distribution and identify recurring categories (same category in 2+ tasks).
-4. For each recurring category, propose ONE concrete, copy-pasteable instruction to add to the implementer prompt (or to the project rules) that would have prevented it. Quote the verdicts that justify it.
-5. Do NOT modify any agent file or rules file yourself: output the proposals in the report for the user to apply.
-
-If the rate is 50% or lower, output only the rate, no analysis.
+A compact table: item (with sub-tasks indented under their epic), status (DONE / DELIVERED with the branch or PR link / BLOCKED / interrupted / not started), fix iterations used, commit hash. Include the issue number or file line for each item. Then: the stop reason (and, if it is a scope limit, the selectable items left), assumptions made on open questions, notes left on remaining items, and BLOCKED task details. The `PIPELINE_STOP` line (see "Run scope and stopping") comes last.

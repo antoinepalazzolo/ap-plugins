@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# Runs the agent pipeline unattended: one headless orchestrator session per item
+# (an epic with its sub-tasks, or a standalone ticket), until nothing is selectable.
+# Each session starts with a fresh context and resumes from the task source.
+set -uo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: run-pipeline [options] [-- <extra claude args>]
+
+Options:
+  -C <dir>             Project directory (default: current directory)
+  --max-runs <n>       Stop after n sessions (default: 200)
+  --max-retries <n>    Consecutive sessions without a stop line before giving up (default: 3)
+  --permission-mode <m>  Passed to claude (default: auto)
+  --prompt <text>      Extra instruction appended to the orchestrator prompt
+  --log-dir <dir>      Where session outputs go
+                       (default: ~/.local/state/agent-pipeline/<project dir name>)
+  -h, --help           Show this help
+
+Exit codes: 0 nothing selectable, 1 the orchestrator stopped on an error,
+2 too many sessions ended without a stop line, 3 --max-runs reached.
+EOF
+}
+
+project_dir=$PWD
+max_runs=200
+max_retries=3
+permission_mode=auto
+extra_prompt=""
+log_dir=""
+claude_args=()
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -C) project_dir=$2; shift 2 ;;
+    --max-runs) max_runs=$2; shift 2 ;;
+    --max-retries) max_retries=$2; shift 2 ;;
+    --permission-mode) permission_mode=$2; shift 2 ;;
+    --prompt) extra_prompt=$2; shift 2 ;;
+    --log-dir) log_dir=$2; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    --) shift; claude_args=("$@"); break ;;
+    *) echo "run-pipeline: unknown option $1" >&2; usage >&2; exit 64 ;;
+  esac
+done
+
+project_dir=$(cd "$project_dir" && pwd) || exit 64
+log_dir=${log_dir:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-pipeline/$(basename "$project_dir")}
+mkdir -p "$log_dir" || exit 64
+
+prompt="Run the agent pipeline in single-item mode: carry exactly one item to its end, then stop and end your final report with the PIPELINE_STOP line."
+[ -n "$extra_prompt" ] && prompt="$prompt $extra_prompt"
+
+log() { printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "$log_dir/run-pipeline.log"; }
+
+cd "$project_dir" || exit 64
+log "start in $project_dir, logs in $log_dir"
+
+retries=0
+for ((run = 1; run <= max_runs; run++)); do
+  out="$log_dir/$(date '+%Y%m%d-%H%M%S')-run$run.json"
+  log "run $run: starting"
+  claude -p "$prompt" \
+    --agent agent-pipeline:orchestrator \
+    --permission-mode "$permission_mode" \
+    --output-format json \
+    "${claude_args[@]}" >"$out" 2>"$out.stderr"
+  status=$?
+  reason=$(grep -o 'PIPELINE_STOP: [a-z-]*' "$out" | tail -n 1 | cut -d' ' -f2)
+  log "run $run: claude exit $status, stop reason '${reason:-none}', output $out"
+
+  case "$reason" in
+    item-done)
+      retries=0 ;;
+    nothing-selectable)
+      log "nothing selectable, done"
+      exit 0 ;;
+    error)
+      log "the orchestrator stopped on an error, see $out"
+      exit 1 ;;
+    *)
+      # Crash, interruption or a report without the stop line: the task source
+      # holds the state, so a fresh session resumes where this one stopped.
+      retries=$((retries + 1))
+      if [ "$retries" -ge "$max_retries" ]; then
+        log "$retries consecutive sessions ended without a stop line, giving up"
+        exit 2
+      fi
+      sleep $((60 * retries)) ;;
+  esac
+done
+
+log "max runs ($max_runs) reached"
+exit 3

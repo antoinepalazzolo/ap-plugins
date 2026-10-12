@@ -32,6 +32,25 @@ Use the agent-pipeline:orchestrator agent
 
 Installed as a plugin, the agents are namespaced under the plugin name, so they are `agent-pipeline:orchestrator`, `agent-pipeline:planner`, `agent-pipeline:implementer`, `agent-pipeline:code-reviewer` and `agent-pipeline:fixer`. The orchestrator spawns the others by their namespaced name and falls back to the short name if you installed them as plain project agents (copied into `.claude/agents/`) instead.
 
+## Unattended runs
+
+`bin/run-pipeline` runs the pipeline without supervision: it starts one headless orchestrator session per item (an epic with its sub-tasks, or a standalone ticket such as a bug), so each item begins with a fresh context, and loops until nothing is selectable. A crashed or interrupted session is simply followed by a new one, which resumes from the task source.
+
+```
+<plugin dir>/bin/run-pipeline -C ~/code/my-project
+```
+
+Each session runs `claude -p --agent agent-pipeline:orchestrator --permission-mode auto` in single-item mode; the orchestrator ends its report with `PIPELINE_STOP: <reason>`, which the runner reads:
+
+| Reason | Runner |
+|--------|--------|
+| `item-done` | starts the next session |
+| `nothing-selectable` | exits 0 |
+| `error` | exits 1, a human must look |
+| no stop line (crash) | retries after a pause, gives up after 3 in a row (exit 2) |
+
+Options: `--max-runs`, `--max-retries`, `--permission-mode`, `--prompt` (extra instruction for every session), `--log-dir` (default `~/.local/state/agent-pipeline/<project>`), and claude arguments after `--`. Run it in `tmux` or as a service on the machine that does the work.
+
 ## Task source
 
 Each project says where its tasks live, in a dedicated file referenced from its `CLAUDE.md`, for example:
@@ -42,7 +61,7 @@ Agent pipeline task source: .claude/pipeline.md
 
 The wording is free: the orchestrator looks for any clear reference to the file, and stops and reports if it finds several candidates or an ambiguous one.
 
-The file is free-form. It tells the orchestrator how to pick the next task, how to mark it started / done / blocked, how to deliver (branch, push, pull request), where to record an epic's breakdown, where to leave notes, and optionally how many items to process per run. By default a run goes on until no selectable item is left, re-reading the task source before each pick so items made ready during the run are taken too; it stops earlier only on an explicit restriction in the prompt ("only epic #42"), on the task source's Scope, or when its context is nearly full (at a clean boundary between tasks). Work handed over in a pull request but not merged yet is *delivered*: skipped by later runs, reported with its link. Whatever it leaves out falls back to the defaults below. The task source is the persistent state of the run: any fresh session resumes from it.
+The file is free-form. It tells the orchestrator how to pick the next task, how to mark it started / done / blocked, how to deliver (branch, push, pull request), where to record an epic's breakdown, where to leave notes, and optionally how many items to process per run. Items are epics and standalone tickets (bugs, tasks not attached to an epic) alike. By default a run goes on until no selectable item is left, re-reading the task source before each pick so items made ready during the run are taken too; it stops earlier only on an explicit restriction in the prompt ("only epic #42"), or on the task source's Scope. Work handed over in a pull request but not merged yet is *delivered*: skipped by later runs, reported with its link. Whatever it leaves out falls back to the defaults below. The task source is the persistent state of the run: any fresh session resumes from it.
 
 Without a reference in `CLAUDE.md`, give the orchestrator a task list inline or as a file (`Use the agent-pipeline:orchestrator agent on tasks.md`).
 
@@ -87,4 +106,4 @@ If the project defines rules (`CLAUDE.md`, `.claude/rules/`), they take preceden
 - One task at a time. Tasks touching the same files are never parallelized.
 - Tests are the source of truth: a reviewer PASS with failing tests is a FAIL.
 - Fix loops are internal. A task that needed 3 iterations still gets one commit describing the shipped change.
-- At the end, the orchestrator reports a status table and, if more than half the tasks needed fixes, an analysis of the recurring review failures with proposed prompt changes.
+- At the end, the orchestrator reports a status table and ends with a `PIPELINE_STOP: <reason>` line.
