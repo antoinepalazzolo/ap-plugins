@@ -34,6 +34,7 @@ The file is free-form, written by the user, and describes:
 - **Deliver**: which branch to work on (the current one, one per item or per epic...), whether to push, and how finished work is handed over (nothing more, a pull request...). Work handed over for review but not merged yet is **delivered**: a normal state, not done and not blocked.
 - **Breakdown**: where to record an epic's sub-tasks (indented items in a file, native GitHub sub-issues...).
 - **Note / Assumption**: where to leave notes on remaining items and assumptions made on open questions.
+- **Follow-ups** (optional): where the polish item that gathers an epic's non-blocking review notes goes, and in which state.
 - **Scope** (optional): how many items to process per run. Default: until no selectable item is left (see "Run scope and stopping").
 - Anything else the project needs (commit references, labels).
 
@@ -107,6 +108,8 @@ where `<reason>` is `nothing-selectable`, `item-done` (the single item, a prompt
    - Applicable project rules.
    - Instruction to return a verdict line: `VERDICT: PASS` or `VERDICT: FAIL`, followed by a numbered list of issues (empty if PASS).
 
+   Non-blocking notes never trigger the fixer, whatever the verdict: record them on the task (Note operation) under a `Review notes` heading, so they survive a resumed run.
+
 3. **Verify objectively**: run the project's test/build commands yourself via Bash (from project rules if defined; otherwise detect them: package.json scripts, Makefile, gradle, xcodebuild, pytest, etc.). Tests are the source of truth. A reviewer PASS with failing tests is a FAIL.
 
 4. **Fix loop**: if the verdict is FAIL or tests fail:
@@ -124,7 +127,7 @@ The task source is the persistent state of the run. Maintain it so any fresh ses
 - **After decomposing an epic**: record the planner's sub-tasks (with their DoD and files) BEFORE starting implementation. The breakdown must never exist only in your context.
 - **After each green task**: commit, then mark it done, or hand it over per Deliver.
 - **After a BLOCKED task**: mark it blocked with a one-line reason and the last error.
-- **After an epic's last sub-task**: mark the epic itself done, or hand it over per Deliver (e.g. push its branch and open the pull request).
+- **After an epic's last sub-task**: mark the epic itself done, or hand it over per Deliver (e.g. push its branch and open the pull request). If its sub-tasks carry review notes, create ONE polish item per Follow-ups, gathering the notes worth a change (drop style trivia and duplicates), each linked to its task. An item handled in a single pass (a standalone task, or an epic not broken down) gets no polish item: its notes stay on the item.
 - **Assumptions** made on open questions: record them on the relevant item.
 
 ### Default Deliver (any source)
@@ -137,6 +140,7 @@ Commit on the current branch, never push, no pull request: a green task is marke
 - Blocked: `- [ ] BLOCKED: <reason>`, committed alone with a `chore` message.
 - Breakdown: sub-tasks indented under the epic as `- [ ]` items, committed alone as `chore: break down <epic> into sub-tasks`.
 - Notes and assumptions: indented lines under the item, committed as `chore: review remaining plan after <epic>`.
+- Follow-ups: a `- [ ] Polish <epic>` item right after the epic, its notes indented under it, committed with the epic's last change.
 
 ### Defaults for GitHub issues
 
@@ -149,6 +153,7 @@ Use `gh` via Bash. Resolve the repo from the task source file, else from `gh rep
 - Delivered: leave the issue open with a comment linking the branch or pull request (a pull request body containing `Closes #<n>` closes it on merge).
 - Blocked: comment the reason and last error on the issue, add the `blocked` label if it exists, leave it open.
 - Notes and assumptions: a comment on the affected issue.
+- Follow-ups: a standalone issue `Polish: follow-ups from #<epic>` listing the notes, each with its task number, linked from a comment on the epic. Not attached to the epic as a sub-issue.
 
 Do NOT write run state into CLAUDE.md. CLAUDE.md is for stable project knowledge; the task source is for progress.
 

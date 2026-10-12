@@ -61,7 +61,7 @@ Agent pipeline task source: .claude/pipeline.md
 
 The wording is free: the orchestrator looks for any clear reference to the file, and stops and reports if it finds several candidates or an ambiguous one.
 
-The file is free-form. It tells the orchestrator how to pick the next task, how to mark it started / done / blocked, how to deliver (branch, push, pull request), where to record an epic's breakdown, where to leave notes, and optionally how many items to process per run. Items are epics and standalone tickets (bugs, tasks not attached to an epic) alike. By default a run goes on until no selectable item is left, re-reading the task source before each pick so items made ready during the run are taken too; it stops earlier only on an explicit restriction in the prompt ("only epic #42"), or on the task source's Scope. Work handed over in a pull request but not merged yet is *delivered*: skipped by later runs, reported with its link. Whatever it leaves out falls back to the defaults below. The task source is the persistent state of the run: any fresh session resumes from it.
+The file is free-form. It tells the orchestrator how to pick the next task, how to mark it started / done / blocked, how to deliver (branch, push, pull request), where to record an epic's breakdown, where to leave notes, where the polish item gathering an epic's non-blocking review notes goes, and optionally how many items to process per run. Items are epics and standalone tickets (bugs, tasks not attached to an epic) alike. By default a run goes on until no selectable item is left, re-reading the task source before each pick so items made ready during the run are taken too; it stops earlier only on an explicit restriction in the prompt ("only epic #42"), or on the task source's Scope. Work handed over in a pull request but not merged yet is *delivered*: skipped by later runs, reported with its link. Whatever it leaves out falls back to the defaults below. The task source is the persistent state of the run: any fresh session resumes from it.
 
 Without a reference in `CLAUDE.md`, give the orchestrator a task list inline or as a file (`Use the agent-pipeline:orchestrator agent on tasks.md`).
 
@@ -78,6 +78,7 @@ Tasks are GitHub issues in acme/shop.
 - Deliver: one branch per ticket, `ticket/<n>`. Close each sub-issue once its commit is pushed. When the whole ticket is green, push the branch and open a pull request with `Closes #<n>`; the ticket stays open until I merge.
 - Blocked: comment the reason, add the `blocked` label, leave it open.
 - Notes: comment on the affected issue.
+- Follow-ups: a standalone `Polish: follow-ups from #<epic>` issue, created only for an epic broken down into tasks.
 ```
 
 Defaults: commit on the current branch without pushing or opening a pull request, assign to `@me` on start, native sub-issues for breakdowns, commit subjects ending in `(#<n>)`, close with the commit hash on done, comment + `blocked` label on failure. The orchestrator never pushes unless Deliver says to.
