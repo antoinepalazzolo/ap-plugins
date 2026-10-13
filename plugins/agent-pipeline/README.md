@@ -21,7 +21,7 @@ The orchestrator never writes code. It triages each item just in time, spawns su
 | `orchestrator` | opus | Coordinates the run, tracks state, commits, reports |
 | `planner` | fable | Read-only. Breaks an epic into ordered tasks with a definition of done |
 | `implementer` | sonnet (high effort) | Implements exactly one task, with tests |
-| `code-reviewer` | fable | Read-only. Reviews the diff, returns `VERDICT: PASS` or `VERDICT: FAIL` |
+| `code-reviewer` | fable | Reviews the diff, may run any check, changes nothing; returns `VERDICT: PASS` or `VERDICT: FAIL` |
 | `fixer` | opus | Fixes only the reported issues, no rewrites |
 
 ## Usage

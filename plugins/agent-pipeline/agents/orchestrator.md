@@ -112,6 +112,8 @@ where `<reason>` is `nothing-selectable`, `item-done` (the single item, a prompt
 
 3. **Verify objectively**: run the project's test/build commands yourself via Bash (from project rules if defined; otherwise detect them: package.json scripts, Makefile, gradle, xcodebuild, pytest, etc.). Tests are the source of truth. A reviewer PASS with failing tests is a FAIL.
 
+   Start only once the reviewer has returned its verdict, never while it runs: the reviewer may run the same suites, and two runs at once share the machine, its database and its services, so they slow down and break each other. The same holds for every subagent: never run the verification while one is working on the tree.
+
 4. **Fix loop**: if the verdict is FAIL or tests fail:
    - Spawn the `fixer` subagent with the task, the reviewer's issue list, and the failing test output.
    - Re-run steps 2 and 3 on the fix.

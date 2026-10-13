@@ -55,8 +55,8 @@ prompt="Run the agent pipeline in single-item mode: carry exactly one item to it
 log() { printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "$log_dir/run-pipeline.log"; }
 
 # In print mode claude waits only 10 minutes for background subagents once the
-# orchestrator ends its turn, then kills them and still exits 0. The orchestrator
-# runs the reviewer and the verification in parallel, so give them 2 hours.
+# orchestrator ends its turn, then kills them and still exits 0. An implementer
+# or a reviewer that runs the test suites takes longer, so give them 2 hours.
 export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=${CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS:-7200000}
 
 cd "$project_dir" || exit 64
