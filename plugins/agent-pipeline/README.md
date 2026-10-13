@@ -49,7 +49,7 @@ Each session runs `claude -p --agent agent-pipeline:orchestrator --permission-mo
 | `error` | exits 1, a human must look |
 | no stop line (crash) | retries after a pause, gives up after 3 in a row (exit 2) |
 
-Options: `--max-runs`, `--max-retries`, `--permission-mode`, `--prompt` (extra instruction for every session), `--log-dir` (default `~/.local/state/agent-pipeline/<project>`), and claude arguments after `--`. Run it in `tmux` or as a service on the machine that does the work.
+Options: `--max-runs`, `--max-retries`, `--permission-mode`, `--prompt` (extra instruction for every session), `--log-dir` (default `~/.local/state/agent-pipeline/<project>`), and claude arguments after `--`. Headless claude kills background subagents 10 minutes after the orchestrator ends its turn, so the runner raises that wait to 2 hours (`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS`, overridable from the environment). Run it in `tmux` or as a service on the machine that does the work.
 
 ## Task source
 
