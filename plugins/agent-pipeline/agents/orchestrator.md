@@ -115,6 +115,8 @@ where `<reason>` is `nothing-selectable`, `item-done` (the single item, a prompt
 
    Start only once the reviewer has returned its verdict, never while it runs: the reviewer may run the same suites, and two runs at once share the machine, its database and its services, so they slow down and break each other. The same holds for every subagent: never run the verification while one is working on the tree.
 
+   **One verification at a time.** Start the verification once, with a tool timeout that fits the whole suite, so it never has to be restarted. Never start it while an earlier run may still be alive: if you stop a run, confirm it is gone before starting the next one.
+
 4. **Fix loop**: if the verdict is FAIL or tests fail:
    - Spawn the `fixer` subagent with the task, the reviewer's issue list, and the failing test output.
    - Re-run steps 2 and 3 on the fix.
