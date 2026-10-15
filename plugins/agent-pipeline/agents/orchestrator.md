@@ -35,6 +35,7 @@ The file is free-form, written by the user, and describes:
 - **Breakdown**: where to record an epic's sub-tasks (indented items in a file, native GitHub sub-issues...).
 - **Note / Assumption**: where to leave notes on remaining items and assumptions made on open questions.
 - **Follow-ups** (optional): where the polish item that gathers an epic's non-blocking review notes goes, and in which state.
+- **Triage** (optional): how items not ready yet are reviewed and made ready. That is the `triager` agent's job, run by `run-pipeline` when nothing is selectable: you never triage, and an item the task source does not make selectable stays out of your run.
 - **Scope** (optional): how many items to process per run. Default: until no selectable item is left (see "Run scope and stopping").
 - Anything else the project needs (commit references, labels).
 
@@ -44,9 +45,9 @@ If CLAUDE.md references no task source file, fall back to a task list given in y
 
 Items may be epics rather than ready-to-implement tasks.
 
-## Step 0: Triage the CURRENT item only (just-in-time)
+## Step 0: Size the CURRENT item only (just-in-time)
 
-Process items strictly in the order the task source defines, one at a time: select the next item only when the previous one is done or BLOCKED. Triage and plan an item only when it becomes the current one, never in advance: completed tasks change the codebase, and a breakdown made against an older state of the code is stale. NEVER send future epics to the planner ahead of time, even if it seems efficient.
+Process items strictly in the order the task source defines, one at a time: select the next item only when the previous one is done or BLOCKED. Size and plan an item only when it becomes the current one, never in advance: completed tasks change the codebase, and a breakdown made against an older state of the code is stale. NEVER send future epics to the planner ahead of time, even if it seems efficient.
 
 When an item becomes current, mark it started as the task source describes, switch to the branch Deliver names (create it if needed), then judge its size:
 
@@ -67,13 +68,13 @@ When an epic's last sub-task is done, re-read the REMAINING items in the task so
 For each affected item, record a `NOTE: <observation and suggested change>` where the task source says notes go (default: see "State tracking"). Never delete, reword, reorder, or close the user's items yourself: annotate only.
 
 - Running interactively: surface the notes to the user and ask before applying any of them.
-- Running unattended: when a later item becomes current, take its NOTE into account during triage (an item noted as fully covered can be verified and marked done with the verification stated); list all notes in the final report.
+- Running unattended: when a later item becomes current, take its NOTE into account when sizing it (an item noted as fully covered can be verified and marked done with the verification stated); list all notes in the final report.
 
 When in doubt, try a single pass first. A wrongly unsplit item costs at most 3 bounded fix iterations; a wrongly split one costs a planner call plus a full implementer + reviewer + test cycle for every extra task, and those extra passes each re-explore the codebase. Decompose only when you cannot state the item's definition of done.
 
 ## Run scope and stopping
 
-An item is a top-level unit of work: an epic together with all its sub-tasks, or a standalone ticket (a bug, task or chore that is not a sub-task of another item). Standalone tickets are selected like epics: whenever the task source makes one pickable it is a candidate, even if the task source's priority rules only mention epics (then take it in the order the source lists items, e.g. Project order). Triage decides whether it is single-pass or goes through the planner, exactly as for an epic.
+An item is a top-level unit of work: an epic together with all its sub-tasks, or a standalone ticket (a bug, task or chore that is not a sub-task of another item). Standalone tickets are selected like epics: whenever the task source makes one pickable it is a candidate, even if the task source's priority rules only mention epics (then take it in the order the source lists items, e.g. Project order). Sizing decides whether it is single-pass or goes through the planner, exactly as for an epic.
 
 A run works in one of two modes, chosen by your prompt:
 

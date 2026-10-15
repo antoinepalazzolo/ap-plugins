@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Runs the agent pipeline unattended: one headless orchestrator session per item
-# (an epic with its sub-tasks, or a standalone ticket), until nothing is selectable.
-# Each session starts with a fresh context and resumes from the task source.
+# (an epic with its sub-tasks, or a standalone ticket) while one is selectable,
+# then one headless triager session per item not ready yet: an item made ready
+# goes back to the orchestrator, a parked one is left for a human. Stops when
+# nothing is selectable and nothing is left to triage. Each session starts with
+# a fresh context and resumes from the task source.
 set -uo pipefail
 
 usage() {
@@ -14,11 +17,12 @@ Options:
   --max-retries <n>    Consecutive sessions without a stop line before giving up (default: 3)
   --permission-mode <m>  Passed to claude (default: auto)
   --prompt <text>      Extra instruction appended to the orchestrator prompt
+  --no-triage          Never run the triager: stop once nothing is selectable
   --log-dir <dir>      Where session outputs go
                        (default: ~/.local/state/agent-pipeline/<project dir name>)
   -h, --help           Show this help
 
-Exit codes: 0 nothing selectable, 1 the orchestrator stopped on an error,
+Exit codes: 0 nothing selectable and nothing to triage, 1 a session stopped on an error,
 2 too many sessions ended without a stop line, 3 --max-runs reached.
 EOF
 }
@@ -28,6 +32,7 @@ max_runs=200
 max_retries=3
 permission_mode=auto
 extra_prompt=""
+triage=1
 log_dir=""
 claude_args=()
 
@@ -39,6 +44,7 @@ while [ $# -gt 0 ]; do
     --permission-mode) permission_mode=$2; shift 2 ;;
     --prompt) extra_prompt=$2; shift 2 ;;
     --log-dir) log_dir=$2; shift 2 ;;
+    --no-triage) triage=0; shift ;;
     -h|--help) usage; exit 0 ;;
     --) shift; claude_args=("$@"); break ;;
     *) echo "run-pipeline: unknown option $1" >&2; usage >&2; exit 64 ;;
@@ -49,8 +55,9 @@ project_dir=$(cd "$project_dir" && pwd) || exit 64
 log_dir=${log_dir:-${XDG_STATE_HOME:-$HOME/.local/state}/agent-pipeline/$(basename "$project_dir")}
 mkdir -p "$log_dir" || exit 64
 
-prompt="Run the agent pipeline in single-item mode: carry exactly one item to its end, then stop and end your final report with the PIPELINE_STOP line."
-[ -n "$extra_prompt" ] && prompt="$prompt $extra_prompt"
+implement_prompt="Run the agent pipeline in single-item mode: carry exactly one item to its end, then stop and end your final report with the PIPELINE_STOP line."
+[ -n "$extra_prompt" ] && implement_prompt="$implement_prompt $extra_prompt"
+triage_prompt="Triage one item of the task source, then stop and end your report with the PIPELINE_STOP line."
 
 log() { printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" | tee -a "$log_dir/run-pipeline.log"; }
 
@@ -62,27 +69,46 @@ export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=${CLAUDE_CODE_PRINT_BG_WAIT_CEILING_
 cd "$project_dir" || exit 64
 log "start in $project_dir, logs in $log_dir"
 
+# implement: one orchestrator session per selectable item. Once nothing is
+# selectable, triage: one triager session per item not ready yet, back to
+# implement as soon as one is made ready.
+mode=implement
 retries=0
 for ((run = 1; run <= max_runs; run++)); do
-  out="$log_dir/$(date '+%Y%m%d-%H%M%S')-run$run.json"
-  log "run $run: starting"
+  if [ "$mode" = implement ]; then
+    agent=agent-pipeline:orchestrator prompt=$implement_prompt
+  else
+    agent=agent-pipeline:triager prompt=$triage_prompt
+  fi
+  out="$log_dir/$(date '+%Y%m%d-%H%M%S')-run$run-$mode.json"
+  log "run $run ($mode): starting"
   claude -p "$prompt" \
-    --agent agent-pipeline:orchestrator \
+    --agent "$agent" \
     --permission-mode "$permission_mode" \
     --output-format json \
     "${claude_args[@]}" >"$out" 2>"$out.stderr"
   status=$?
   reason=$(grep -o 'PIPELINE_STOP: [a-z-]*' "$out" | tail -n 1 | cut -d' ' -f2)
-  log "run $run: claude exit $status, stop reason '${reason:-none}', output $out"
+  log "run $run ($mode): claude exit $status, stop reason '${reason:-none}', output $out"
 
-  case "$reason" in
-    item-done)
+  case "$mode:$reason" in
+    implement:item-done | triage:item-needs-decision)
       retries=0 ;;
-    nothing-selectable)
-      log "nothing selectable, done"
+    triage:item-ready)
+      retries=0
+      mode=implement ;;
+    implement:nothing-selectable)
+      retries=0
+      if [ "$triage" -eq 0 ]; then
+        log "nothing selectable, done"
+        exit 0
+      fi
+      mode=triage ;;
+    triage:nothing-selectable)
+      log "nothing selectable and nothing to triage, done"
       exit 0 ;;
-    error)
-      log "the orchestrator stopped on an error, see $out"
+    *:error)
+      log "the $mode session stopped on an error, see $out"
       exit 1 ;;
     *)
       # Crash, interruption or a report without the stop line: the task source
