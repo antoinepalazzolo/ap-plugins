@@ -25,7 +25,7 @@ The orchestrator never writes code. It sizes each item just in time, spawns suba
 | `implementer` | sonnet (high effort) | Implements exactly one task, with tests |
 | `code-reviewer` | fable | Reviews the diff, may run any check, changes nothing; returns `VERDICT: PASS` or `VERDICT: FAIL` |
 | `fixer` | opus | Fixes only the reported issues, no rewrites |
-| `triager` | fable | Reviews one item not ready yet; makes it ready, or parks it with a question for a human. Changes only the task source, never the repository |
+| `triager` | opus | Reviews one item not ready yet; makes it ready, or parks it with a question for a human. Changes only the task source, never the repository |
 
 ## Usage
 

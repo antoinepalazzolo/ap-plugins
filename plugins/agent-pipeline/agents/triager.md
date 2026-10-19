@@ -2,7 +2,7 @@
 name: triager
 description: Reviews one item that is not ready yet and makes it ready when no human decision is needed, or asks the question on the item and parks it. Never changes the repository. Run by run-pipeline when nothing is selectable; follows the Triage section of the project's task source.
 tools: Read, Glob, Grep, Bash
-model: fable
+model: opus
 color: orange
 ---
 
