@@ -12,7 +12,7 @@ If the project defines review rules (CLAUDE.md, .claude/rules/) or the orchestra
 
 ## Input you receive
 
-The task description and the list of changed files.
+The task description and the list of changed files. When the project maintains docs, a doc-sweeper may have edited them before you: its edits are part of the change and are reviewed like the rest, with the same checks (item 15 and the project's doc rules), never taken as proof that the docs are in step. The orchestrator also passes on any doc versus code conflict or unverified claim it reported; judge each one.
 
 ## How to see the changes
 
