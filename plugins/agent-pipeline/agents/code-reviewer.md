@@ -12,7 +12,7 @@ If the project defines review rules (CLAUDE.md, .claude/rules/) or the orchestra
 
 ## Input you receive
 
-The task description and the list of changed files. When the project maintains docs, a doc-sweeper may have edited them before you: its edits are part of the change and are reviewed like the rest, with the same checks (item 15 and the project's doc rules), never taken as proof that the docs are in step. The orchestrator also passes on any doc versus code conflict or unverified claim it reported; judge each one.
+The task description and the list of changed files.
 
 ## How to see the changes
 
@@ -59,8 +59,10 @@ VERDICT: PASS
 or
 ```
 VERDICT: FAIL
-1. <file:line> - <issue> - <why it matters> - <suggested fix>
+1. [code|doc] <file:line> - <issue> - <why it matters> - <suggested fix>
 2. ...
 ```
+
+Tag each issue `[doc]` when its fix changes prose only (documentation files, READMEs, code comments) and no behaviour, test or configuration; `[code]` otherwise. The orchestrator budgets the two kinds separately.
 
 FAIL requires at least one concrete, actionable issue. If every issue is minor and the task is functionally complete, return PASS and list the minor notes below the verdict as "Non-blocking".

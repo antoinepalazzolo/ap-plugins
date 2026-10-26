@@ -8,7 +8,6 @@ An autonomous task pipeline. It takes the project's tasks (a file in the repo or
 orchestrator
   ├── planner          (epic too big → ordered sub-tasks)
   ├── implementer      (writes the code + tests)
-  ├── doc-sweeper      (brings the docs in step with the change, before review)
   ├── code-reviewer    (strict PASS / FAIL verdict)
   └── fixer            (addresses reported issues, max 3 iterations)
 
@@ -24,7 +23,6 @@ The orchestrator never writes code. It sizes each item just in time, spawns suba
 | `orchestrator` | opus | Coordinates the run, tracks state, commits, reports |
 | `planner` | fable | Read-only. Breaks an epic into ordered tasks with a definition of done |
 | `implementer` | sonnet (high effort) | Implements exactly one task, with tests |
-| `doc-sweeper` | sonnet (high effort) | Fresh eyes on the change: greps every subject it touches across the docs and READMEs, updates stale statements, checks each claim against the code. Edits docs only |
 | `code-reviewer` | fable | Reviews the diff, may run any check, changes nothing; returns `VERDICT: PASS` or `VERDICT: FAIL` |
 | `fixer` | opus | Fixes only the reported issues, no rewrites |
 | `triager` | opus | Reviews one item not ready yet; makes it ready, or parks it with a question for a human. Changes only the task source, never the repository |
@@ -35,7 +33,7 @@ The orchestrator never writes code. It sizes each item just in time, spawns suba
 Use the agent-pipeline:orchestrator agent
 ```
 
-Installed as a plugin, the agents are namespaced under the plugin name, so they are `agent-pipeline:orchestrator`, `agent-pipeline:planner`, `agent-pipeline:implementer`, `agent-pipeline:doc-sweeper`, `agent-pipeline:code-reviewer` and `agent-pipeline:fixer`. The orchestrator spawns the others by their namespaced name and falls back to the short name if you installed them as plain project agents (copied into `.claude/agents/`) instead.
+Installed as a plugin, the agents are namespaced under the plugin name, so they are `agent-pipeline:orchestrator`, `agent-pipeline:planner`, `agent-pipeline:implementer`, `agent-pipeline:code-reviewer` and `agent-pipeline:fixer`. The orchestrator spawns the others by their namespaced name and falls back to the short name if you installed them as plain project agents (copied into `.claude/agents/`) instead.
 
 ## Unattended runs
 
@@ -109,7 +107,7 @@ Tasks are in docs/roadmap.md, processed top to bottom.
 Defaults for a file:
 
 - `- [ ]` pending, `- [x]` done (marked in the task's own commit)
-- `- [ ] BLOCKED: <reason>` when a task failed 3 fix iterations
+- `- [ ] BLOCKED: <reason>` when a task failed 3 code fix iterations (doc-only iterations have their own budget of 2 and never block)
 - Sub-tasks from the planner are written back under their epic before implementation starts
 - `NOTE:` annotations flag remaining items affected by completed work
 
